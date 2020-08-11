@@ -1,4 +1,4 @@
-./models
-./runs
-./data
-./.idea
+/models
+/runs
+/data
+/.idea
