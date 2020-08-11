@@ -71,15 +71,10 @@ class Trainer():
         self.model.to(self.device)
         
         n_classes = len(self.label_names)
-        if weighted and not self.label_names is None:
+        if weighted:
             train_labels = train_dataloader.dataset.labels
-            clss, cnts = np.unique(train_labels, return_counts=True)
-            tmp = np.ones(n_classes, dtype=np.int64)
-            for cls, cnt in zip(clss, cnts):
-                tmp[cls] = cnt
-            weights = len(train_labels)/(n_classes*tmp)
-            weights = torch.FloatTensor(weights).to(self.device)
-            self.loss = loss(weight=weights)            
+            weights = len(train_labels)/(n_classes*np.bincount(train_labels))
+            self.loss = loss(weight=torch.FloatTensor(weights).to(self.device))             
               
         optimizer = optim(self.model.parameters(), weight_decay=weight_decay, lr=lr)
         if not schedul is None:
@@ -124,6 +119,7 @@ class Trainer():
 
             pred_val = np.vstack(pred_val_lst)
             pred_proba_val = np.vstack(pred_proba_val_lst)
+            pred_proba_val = np.exp(pred_proba_val)/np.sum(np.exp(pred_proba_val), axis=1).reshape(-1, 1)
 
             history = scorer(pred_val, pred_proba_val, lbl_val)
             history['loss_train'] = np.mean(loss_train_lst)
@@ -234,6 +230,7 @@ class Trainer():
         
         pred_test = np.vstack(pred_test_lst)
         pred_proba_test = np.vstack(pred_proba_test_lst)
+        pred_proba_test = np.exp(pred_proba_test)/np.sum(np.exp(pred_proba_test), axis=1).reshape(-1, 1)
  
         if not y_batch is None:
             history = scorer(pred_test, pred_proba_test, lbl_test)
